@@ -12,6 +12,7 @@ type Message =
   | { kind: "empty" }
   | { kind: "finished"; ticketNumber: number }
   | { kind: "error"; text: string }
+  | { kind: "success"; text: string }
   | null;
 
 // No sound on this page on purpose — this is the employee's own
@@ -156,6 +157,24 @@ export default function CallPage() {
     }
   }
 
+  async function recallTicket() {
+    if (counterNumber === null || !current) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.rpc("recall_ticket", {
+        p_business_date: todayBusinessDate(),
+        p_counter_number: counterNumber,
+      });
+      if (error) throw error;
+      setMessage({ kind: "success", text: "تمت إعادة النداء بنجاح!" });
+    } catch (e) {
+      setMessage({ kind: "error", text: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (counterNumber === null) {
     return (
       <div className="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center p-6">
@@ -210,13 +229,22 @@ export default function CallPage() {
         )}
 
         {current ? (
-          <button
-            onClick={finishReview}
-            disabled={busy}
-            className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-lg rounded-lg py-5"
-          >
-            {busy ? "جاري الحفظ…" : "تمت المراجعة"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={recallTicket}
+              disabled={busy}
+              className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-300 text-white font-extrabold text-lg rounded-lg py-5"
+            >
+              {busy ? "..." : "إعادة نداء"}
+            </button>
+            <button
+              onClick={finishReview}
+              disabled={busy}
+              className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-lg rounded-lg py-5"
+            >
+              {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+            </button>
+          </div>
         ) : (
           <button
             onClick={requestNext}
@@ -235,6 +263,7 @@ export default function CallPage() {
           )}
           {message?.kind === "empty" && <span className="text-amber-700 font-bold">مفيش حد مستنّي دلوقتي.</span>}
           {message?.kind === "error" && <span className="text-red-700 font-bold">{message.text}</span>}
+          {message?.kind === "success" && <span className="text-emerald-700 font-bold">{message.text}</span>}
         </div>
       </div>
     </div>

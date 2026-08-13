@@ -39,6 +39,7 @@ type Outcome =
   | { kind: "empty" }
   | { kind: "finished"; ticketNumber: number }
   | { kind: "error"; message: string }
+  | { kind: "success"; message: string }
   | null;
 
 /** Stable per-browser desk id. It scopes "the student I'm currently
@@ -252,6 +253,27 @@ export default function AdmissionPage() {
     }
   }
 
+  async function recallNext() {
+    if (!nowServing) return;
+    setBusy(true);
+    setOutcome(null);
+    try {
+      const { error } = await supabase.rpc("admission_recall_ticket", {
+        p_business_date: businessDate,
+        p_desk: deskId,
+      });
+      if (error) throw error;
+      setOutcome({ kind: "success", message: "تمت إعادة النداء بنجاح!" });
+    } catch (e) {
+      setOutcome({
+        kind: "error",
+        message: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (selected === null) {
     return <div className="min-h-screen bg-slate-100" />; // pre-hydration blank, no flash
   }
@@ -329,13 +351,22 @@ export default function AdmissionPage() {
       </section>
 
       {nowServing ? (
-        <button
-          onClick={finishReview}
-          disabled={busy}
-          className="w-full max-w-md bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
-        >
-          {busy ? "جاري الحفظ…" : "تمت المراجعة"}
-        </button>
+        <div className="flex gap-3 w-full max-w-md">
+          <button
+            onClick={recallNext}
+            disabled={busy}
+            className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
+          >
+            {busy ? "..." : "إعادة نداء"}
+          </button>
+          <button
+            onClick={finishReview}
+            disabled={busy}
+            className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
+          >
+            {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+          </button>
+        </div>
       ) : (
         <button
           onClick={claimNext}
@@ -356,6 +387,7 @@ export default function AdmissionPage() {
           <span className="text-amber-700 font-bold">لا يوجد طلاب في الانتظار حاليًا.</span>
         )}
         {outcome?.kind === "error" && <span className="text-red-700 font-bold">{outcome.message}</span>}
+        {outcome?.kind === "success" && <span className="text-emerald-700 font-bold">{outcome.message}</span>}
       </div>
 
       <section className="w-full max-w-md bg-white border border-slate-200 rounded-2xl overflow-hidden">
