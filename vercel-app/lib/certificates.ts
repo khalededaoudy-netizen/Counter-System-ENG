@@ -17,19 +17,8 @@ export type CertificateType = {
 };
 
 export const CERTIFICATE_TYPES: CertificateType[] = [
-  { value: "ig", label: "شهادة الدبلومه البريطانية" },
-  { value: "saudi", label: "شهادة سعودية" },
-  { value: "qatari", label: "شهادة قطرية" },
-  { value: "bahraini", label: "شهادة بحرينية" },
-  { value: "kuwaiti", label: "شهادة كويتية" },
-  { value: "omani", label: "شهادة عمانية" },
-  { value: "yemeni", label: "شهادة يمنية" },
-  { value: "palestinian", label: "شهادة فلسطينية (توجيهي)" },
   { value: "egyptian", label: "الثانوية العامة المصرية" },
-  { value: "azhar", label: "الثانوية الأزهرية" },
-  { value: "emirati", label: "الشهادة الإماراتية" },
-  { value: "americanDiploma", label: "الدبلومة الأمريكية" },
-  { value: "other", label: "أخرى" },
+  { value: "azhar", label: "ثانوية ازهرية" },
 ];
 
 const LABELS = new Map(CERTIFICATE_TYPES.map((c) => [c.value, c.label]));

@@ -15,19 +15,8 @@ drift, so this comment is enforced rather than aspirational.
 from __future__ import annotations
 
 CERTIFICATE_TYPES: tuple[tuple[str, str], ...] = (
-    ("ig", "شهادة الدبلومه البريطانية"),
-    ("saudi", "شهادة سعودية"),
-    ("qatari", "شهادة قطرية"),
-    ("bahraini", "شهادة بحرينية"),
-    ("kuwaiti", "شهادة كويتية"),
-    ("omani", "شهادة عمانية"),
-    ("yemeni", "شهادة يمنية"),
-    ("palestinian", "شهادة فلسطينية (توجيهي)"),
     ("egyptian", "الثانوية العامة المصرية"),
-    ("azhar", "الثانوية الأزهرية"),
-    ("emirati", "الشهادة الإماراتية"),
-    ("americanDiploma", "الدبلومة الأمريكية"),
-    ("other", "أخرى"),
+    ("azhar", "ثانوية ازهرية"),
 )
 
 CERTIFICATE_VALUES: frozenset[str] = frozenset(value for value, _ in CERTIFICATE_TYPES)
