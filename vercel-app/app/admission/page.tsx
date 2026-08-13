@@ -66,6 +66,7 @@ export default function AdmissionPage() {
   const [businessDate, setBusinessDate] = useState("");
 
   const [waitingByType, setWaitingByType] = useState<Record<string, number>>({});
+  const [noShows, setNoShows] = useState<number[]>([]);
   const [nowServing, setNowServing] = useState<NowServing | null>(null);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [busy, setBusy] = useState(false);
@@ -97,7 +98,11 @@ export default function AdmissionPage() {
   const refresh = useCallback(async () => {
     if (!businessDate || !selected || selected.length === 0) return;
     try {
-      const [{ data: waitingRows, error: waitingError }, { data: servingRows }] = await Promise.all([
+      const [
+        { data: waitingRows, error: waitingError },
+        { data: servingRows },
+        { data: noShowRows },
+      ] = await Promise.all([
         supabase
           .from("tickets")
           .select("certificate_type")
@@ -112,6 +117,12 @@ export default function AdmissionPage() {
           .eq("admission_desk", deskId)
           .order("admission_called_at", { ascending: false })
           .limit(1),
+        supabase
+          .from("tickets")
+          .select("ticket_number")
+          .eq("business_date", businessDate)
+          .eq("status", "ADMISSION_NO_SHOW")
+          .order("updated_at", { ascending: true }),
       ]);
       if (waitingError) throw waitingError;
 
@@ -135,6 +146,7 @@ export default function AdmissionPage() {
             }
           : null
       );
+      setNoShows(noShowRows?.map((d) => d.ticket_number) || []);
       setOffline(false);
     } catch {
       setOffline(true);
@@ -274,6 +286,53 @@ export default function AdmissionPage() {
     }
   }
 
+  async function markNoShow() {
+    if (!nowServing) return;
+    setBusy(true);
+    setOutcome(null);
+    try {
+      const { error } = await supabase.rpc("admission_mark_no_show", {
+        p_business_date: businessDate,
+        p_desk: deskId,
+      });
+      if (error) throw error;
+      setOutcome({ kind: "empty" });
+      setNowServing(null);
+      refresh();
+    } catch (e) {
+      setOutcome({
+        kind: "error",
+        message: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function recallNoShow(ticketNumber: number) {
+    if (!businessDate || !deskId) return;
+    setBusy(true);
+    setOutcome(null);
+    unlockSpeech();
+    try {
+      const { error } = await supabase.rpc("admission_recall_no_show", {
+        p_business_date: businessDate,
+        p_desk: deskId,
+        p_ticket_number: ticketNumber,
+      });
+      if (error) throw error;
+      setOutcome({ kind: "success", message: "تم سحب الرقم من قائمة الانتظار بنجاح!" });
+      refresh();
+    } catch (e) {
+      setOutcome({
+        kind: "error",
+        message: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (selected === null) {
     return <div className="min-h-screen bg-slate-100" />; // pre-hydration blank, no flash
   }
@@ -351,20 +410,29 @@ export default function AdmissionPage() {
       </section>
 
       {nowServing ? (
-        <div className="flex gap-3 w-full max-w-md">
+        <div className="flex flex-col gap-3 w-full max-w-md">
+          <div className="flex gap-3">
+            <button
+              onClick={recallNext}
+              disabled={busy}
+              className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
+            >
+              {busy ? "..." : "إعادة نداء"}
+            </button>
+            <button
+              onClick={finishReview}
+              disabled={busy}
+              className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
+            >
+              {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+            </button>
+          </div>
           <button
-            onClick={recallNext}
+            onClick={markNoShow}
             disabled={busy}
-            className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
+            className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-extrabold text-xl rounded-2xl py-4"
           >
-            {busy ? "..." : "إعادة نداء"}
-          </button>
-          <button
-            onClick={finishReview}
-            disabled={busy}
-            className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-2xl rounded-2xl py-7"
-          >
-            {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+            {busy ? "..." : "لم يحضر / تخطي"}
           </button>
         </div>
       ) : (
@@ -389,6 +457,24 @@ export default function AdmissionPage() {
         {outcome?.kind === "error" && <span className="text-red-700 font-bold">{outcome.message}</span>}
         {outcome?.kind === "success" && <span className="text-emerald-700 font-bold">{outcome.message}</span>}
       </div>
+
+      {noShows.length > 0 && !nowServing && (
+        <section className="w-full max-w-md bg-white border border-slate-200 rounded-2xl overflow-hidden mt-2 p-5">
+          <h2 className="text-lg font-bold text-slate-700 mb-4 text-center">الانتظار (لم يحضر)</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {noShows.map((num) => (
+              <button
+                key={num}
+                onClick={() => recallNoShow(num)}
+                disabled={busy}
+                className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-600 text-white font-bold text-3xl py-5 rounded-xl"
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="w-full max-w-md bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200">

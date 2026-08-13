@@ -33,10 +33,19 @@ const ISSUED_STATUSES = [
   "WAITING_FOR_ADMISSION",
   "CALLED_BY_ADMISSION",
   "COMPLETED",
+  "NO_SHOW",
+  "ADMISSION_NO_SHOW",
 ];
 // Everything past the general waiting hall — i.e. already called at
 // least once.
-const CALLED_STATUSES = ["CALLED", "WAITING_FOR_ADMISSION", "CALLED_BY_ADMISSION", "COMPLETED"];
+const CALLED_STATUSES = [
+  "CALLED",
+  "WAITING_FOR_ADMISSION",
+  "CALLED_BY_ADMISSION",
+  "COMPLETED",
+  "NO_SHOW",
+  "ADMISSION_NO_SHOW",
+];
 
 type DisplayData = {
   // Last 5 calls, most recent first — not just the single latest one.

@@ -34,6 +34,7 @@ export default function CallPage() {
   const [setupValue, setSetupValue] = useState("1");
   const [servedCount, setServedCount] = useState(0);
   const [current, setCurrent] = useState<CurrentTicket>(null);
+  const [noShows, setNoShows] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
 
@@ -75,12 +76,23 @@ export default function CallPage() {
     setServedCount(count ?? 0);
   }, []);
 
+  const refreshNoShows = useCallback(async () => {
+    const { data } = await supabase
+      .from("tickets")
+      .select("ticket_number")
+      .eq("business_date", todayBusinessDate())
+      .eq("status", "NO_SHOW")
+      .order("updated_at", { ascending: true });
+    setNoShows(data?.map((d) => d.ticket_number) || []);
+  }, []);
+
   useEffect(() => {
     if (counterNumber !== null) {
       refreshCurrent(counterNumber);
       refreshServedCount(counterNumber);
+      refreshNoShows();
     }
-  }, [counterNumber, refreshCurrent, refreshServedCount]);
+  }, [counterNumber, refreshCurrent, refreshServedCount, refreshNoShows]);
 
   function confirmSetup() {
     const n = parseInt(setupValue, 10);
@@ -175,6 +187,47 @@ export default function CallPage() {
     }
   }
 
+  async function markNoShow() {
+    if (counterNumber === null || !current) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.rpc("mark_no_show", {
+        p_business_date: todayBusinessDate(),
+        p_counter_number: counterNumber,
+      });
+      if (error) throw error;
+      setMessage({ kind: "empty" });
+      setCurrent(null);
+      refreshNoShows();
+    } catch (e) {
+      setMessage({ kind: "error", text: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function recallNoShow(ticketNumber: number) {
+    if (counterNumber === null) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.rpc("recall_no_show", {
+        p_business_date: todayBusinessDate(),
+        p_counter_number: counterNumber,
+        p_ticket_number: ticketNumber,
+      });
+      if (error) throw error;
+      setMessage({ kind: "success", text: "تم سحب الرقم من قائمة الانتظار بنجاح!" });
+      await refreshCurrent(counterNumber);
+      await refreshNoShows();
+    } catch (e) {
+      setMessage({ kind: "error", text: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (counterNumber === null) {
     return (
       <div className="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center p-6">
@@ -229,20 +282,29 @@ export default function CallPage() {
         )}
 
         {current ? (
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button
+                onClick={recallTicket}
+                disabled={busy}
+                className="flex-[1] bg-slate-500 hover:bg-slate-600 disabled:bg-slate-300 text-white font-extrabold text-lg rounded-lg py-5"
+              >
+                {busy ? "..." : "إعادة نداء"}
+              </button>
+              <button
+                onClick={finishReview}
+                disabled={busy}
+                className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-lg rounded-lg py-5"
+              >
+                {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+              </button>
+            </div>
             <button
-              onClick={recallTicket}
+              onClick={markNoShow}
               disabled={busy}
-              className="flex-1 bg-slate-500 hover:bg-slate-600 disabled:bg-slate-300 text-white font-extrabold text-lg rounded-lg py-5"
+              className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-extrabold text-lg rounded-lg py-3"
             >
-              {busy ? "..." : "إعادة نداء"}
-            </button>
-            <button
-              onClick={finishReview}
-              disabled={busy}
-              className="flex-[2] bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white font-extrabold text-lg rounded-lg py-5"
-            >
-              {busy ? "جاري الحفظ…" : "تمت المراجعة"}
+              {busy ? "..." : "لم يحضر / تخطي"}
             </button>
           </div>
         ) : (
@@ -265,6 +327,24 @@ export default function CallPage() {
           {message?.kind === "error" && <span className="text-red-700 font-bold">{message.text}</span>}
           {message?.kind === "success" && <span className="text-emerald-700 font-bold">{message.text}</span>}
         </div>
+
+        {noShows.length > 0 && !current && (
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <h2 className="text-lg font-bold text-slate-700 mb-4">الانتظار (لم يحضر)</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {noShows.map((num) => (
+                <button
+                  key={num}
+                  onClick={() => recallNoShow(num)}
+                  disabled={busy}
+                  className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-600 text-white font-bold text-2xl py-4 rounded-xl"
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
