@@ -87,11 +87,31 @@ export default function CallPage() {
   }, []);
 
   useEffect(() => {
-    if (counterNumber !== null) {
+    if (counterNumber === null) return;
+    const businessDate = todayBusinessDate();
+
+    const doRefresh = () => {
       refreshCurrent(counterNumber);
       refreshServedCount(counterNumber);
       refreshNoShows();
-    }
+    };
+
+    doRefresh();
+
+    const channel = supabase
+      .channel("call-queues")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tickets", filter: `business_date=eq.${businessDate}` },
+        () => doRefresh()
+      )
+      .subscribe();
+
+    const interval = setInterval(doRefresh, 5000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, [counterNumber, refreshCurrent, refreshServedCount, refreshNoShows]);
 
   function confirmSetup() {
