@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vercel-app-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "vercel-app", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

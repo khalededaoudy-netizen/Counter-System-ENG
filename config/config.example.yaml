@@ -1,0 +1,39 @@
+# Copy this file to config/config.yaml and edit it.
+# config.yaml is git-ignored — it is machine-specific and may contain
+# non-secret local settings. Secrets (Supabase URL/key) go in .env instead.
+
+printer:
+  # Exact Windows printer name as shown in "Devices and Printers".
+  # Leave empty to use the system default printer.
+  name: ""
+  copies: 1
+
+template:
+  # Path to the pre-rendered ticket template image (see README
+  # "Template requirements" — this is exported once from the real
+  # Word design; the ticket number is drawn onto a copy of it for
+  # every print). The number's box/font/alignment are defined in
+  # app/printing/ticket_image.py (NUMBER_BOX, FONT_SIZE, RIGHT_GAP).
+  path: "templates/ticket_template_highres.png"
+  # Zero-padding for the printed number, e.g. 3 -> "007". Set to 0 for no padding.
+  number_padding: 0
+
+database:
+  path: "data/queue.db"
+
+sync:
+  enabled: true
+  interval_seconds: 15
+  batch_size: 25
+
+logging:
+  dir: "data/logs"
+  level: "INFO"
+
+web:
+  # Bind address for the Phase 2 public-display/call server
+  # (python -m app.web.server). 0.0.0.0 makes it reachable from other
+  # devices on the local network at http://<this-pc-ip>:<port>.
+  host: "0.0.0.0"
+  port: 8000
+  next_numbers_count: 5
