@@ -255,11 +255,19 @@ class MainWindow(QMainWindow):
         sc_layout.addWidget(self.sync_status_label)
         layout.addWidget(status_card)
 
-        # Print button
-        self.print_button = QPushButton("طباعة التذكرة التالية")
-        self.print_button.setObjectName("printButton")
-        self.print_button.clicked.connect(self._on_print_clicked)
-        layout.addWidget(self.print_button)
+        # Print buttons
+        print_layout = QHBoxLayout()
+        self.print_egyptian_button = QPushButton("طباعة (عامة)")
+        self.print_egyptian_button.setObjectName("printButton")
+        self.print_egyptian_button.clicked.connect(lambda: self._print_next_direct("egyptian", test=False))
+        
+        self.print_azhar_button = QPushButton("طباعة (ازهرية)")
+        self.print_azhar_button.setObjectName("printButton")
+        self.print_azhar_button.clicked.connect(lambda: self._print_next_direct("azhar", test=False))
+
+        print_layout.addWidget(self.print_egyptian_button)
+        print_layout.addWidget(self.print_azhar_button)
+        layout.addLayout(print_layout)
 
         # Test button: runs the exact same reserve → mark-printed →
         # sync flow as a real print (numbers still advance, records
@@ -393,11 +401,13 @@ class MainWindow(QMainWindow):
                 f"إعادة طباعة الرقم {unresolved.ticket_number}"
                 f" ({certificate_label(unresolved.certificate_type)})"
             )
-            self.print_button.setEnabled(False)
+            self.print_egyptian_button.setEnabled(False)
+            self.print_azhar_button.setEnabled(False)
             self.test_button.setEnabled(False)
         else:
             self.warning_frame.hide()
-            self.print_button.setEnabled(True)
+            self.print_egyptian_button.setEnabled(True)
+            self.print_azhar_button.setEnabled(True)
             self.test_button.setEnabled(True)
 
     def _append_log(self, line: str) -> None:
@@ -502,6 +512,21 @@ class MainWindow(QMainWindow):
             logger.info("🔓 Test mode unlocked for this session")
         self._print_next(test=True)
 
+    def _print_next_direct(self, certificate_type: str, test: bool) -> None:
+        self.error_label.setText("")
+        self.print_egyptian_button.setEnabled(False)
+        self.print_azhar_button.setEnabled(False)
+        self.test_button.setEnabled(False)
+        try:
+            ticket = self.ticket_service.reserve_next_ticket(self.session.id, certificate_type)
+            logger.info(
+                "Reserved ticket #%s (%s)", ticket.ticket_number, certificate_label(certificate_type)
+            )
+            self._refresh_all()
+            self._do_print(ticket, test=test)
+        finally:
+            self._refresh_all()
+
     def _print_next(self, test: bool) -> None:
         # Ask for the certificate BEFORE reserving anything: cancelling
         # the picker must leave the sequence untouched, so a mis-click
@@ -514,18 +539,7 @@ class MainWindow(QMainWindow):
             logger.info("Certificate selection cancelled — no number was reserved")
             return
 
-        self.error_label.setText("")
-        self.print_button.setEnabled(False)
-        self.test_button.setEnabled(False)
-        try:
-            ticket = self.ticket_service.reserve_next_ticket(self.session.id, certificate_type)
-            logger.info(
-                "Reserved ticket #%s (%s)", ticket.ticket_number, certificate_label(certificate_type)
-            )
-            self._refresh_all()
-            self._do_print(ticket, test=test)
-        finally:
-            self._refresh_all()
+        self._print_next_direct(certificate_type, test)
 
     def _on_retry_clicked(self) -> None:
         # Test-mode prints can't fail (no printer/template call to
