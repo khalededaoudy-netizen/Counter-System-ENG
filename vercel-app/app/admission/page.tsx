@@ -81,18 +81,22 @@ export default function AdmissionPage() {
   // the server-rendered shell, and todayBusinessDate() reads the local
   // clock — computing any of them in the first render breaks hydration.
   useEffect(() => {
-    setBusinessDate(todayBusinessDate());
-    setDeskId(loadOrCreateDeskId());
-    setSoundAvailable(speechAvailable());
+    setTimeout(() => {
+      setBusinessDate(todayBusinessDate());
+      setDeskId(loadOrCreateDeskId());
+      setSoundAvailable(speechAvailable());
+    }, 0);
 
     const saved = localStorage.getItem(SELECTION_STORAGE_KEY);
     const parsed: string[] = saved ? JSON.parse(saved) : [];
     // Drop anything no longer in the canonical list, so a removed
     // certificate can't leave an employee holding a dead queue.
     const valid = parsed.filter((v) => CERTIFICATE_TYPES.some((c) => c.value === v));
-    setSelected(valid);
-    setDraft(valid);
-    setStarted(valid.length > 0);
+    setTimeout(() => {
+      setSelected(valid);
+      setDraft(valid);
+      setStarted(valid.length > 0);
+    }, 0);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -146,7 +150,7 @@ export default function AdmissionPage() {
             }
           : null
       );
-      setNoShows(noShowRows?.map((d) => d.ticket_number) || []);
+      setNoShows(noShowRows?.map((d: any) => d.ticket_number) || []);
       setOffline(false);
     } catch {
       setOffline(true);
@@ -157,7 +161,7 @@ export default function AdmissionPage() {
   // 5s poll the other screens keep as a safety net for a missed event.
   useEffect(() => {
     if (!started || !businessDate || !selected || selected.length === 0) return;
-    refresh();
+    setTimeout(() => { refresh(); }, 0);
 
     const channel = supabase
       .channel("admission-queues")

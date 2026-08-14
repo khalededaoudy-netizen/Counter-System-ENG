@@ -43,7 +43,9 @@ export default function CallPage() {
   // screen, not back through setup.
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setCounterNumber(parseInt(saved, 10));
+    if (saved) {
+      setTimeout(() => setCounterNumber(parseInt(saved, 10)), 0);
+    }
   }, []);
 
   // Re-derived from the server, not just kept in React state — a page
@@ -83,7 +85,7 @@ export default function CallPage() {
       .eq("business_date", todayBusinessDate())
       .eq("status", "NO_SHOW")
       .order("updated_at", { ascending: true });
-    setNoShows(data?.map((d) => d.ticket_number) || []);
+    setNoShows(data?.map((d: any) => d.ticket_number) || []);
   }, []);
 
   useEffect(() => {

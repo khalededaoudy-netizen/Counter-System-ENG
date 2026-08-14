@@ -114,7 +114,7 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
 
   const merged: CalledEntry[] = [
     ...(calledRows || []).map(
-      (r): CalledEntry => ({
+      (r: any): CalledEntry => ({
         kind: "counter",
         ticketNumber: r.ticket_number,
         at: r.called_at,
@@ -122,7 +122,7 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
       })
     ),
     ...(admissionRows || []).map(
-      (r): CalledEntry => ({
+      (r: any): CalledEntry => ({
         kind: "admission",
         ticketNumber: r.ticket_number,
         at: r.admission_called_at,
@@ -135,7 +135,7 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
 
   return {
     recentlyCalled: merged,
-    nextNumbers: (waitingRows || []).map((r) => r.ticket_number),
+    nextNumbers: (waitingRows || []).map((r: any) => r.ticket_number),
     stats: {
       totalToday: totalToday ?? 0,
       waiting: waiting ?? 0,
@@ -165,17 +165,21 @@ export default function DisplayPage() {
   const lastCalledAt = useRef<string | null>(null);
 
   useEffect(() => {
-    setBusinessDate(todayBusinessDate());
-    const available = speechAvailable();
-    setSoundAvailable(available);
-    if (!available) return;
+    let cleanup = () => {};
+    setTimeout(() => {
+      setBusinessDate(todayBusinessDate());
+      const available = speechAvailable();
+      setSoundAvailable(available);
+      if (!available) return;
 
-    const syncVoices = () => {
-      setVoices(getArabicVoices());
-      setSelectedVoiceURIState(getSelectedVoice()?.voiceURI || "");
-    };
-    syncVoices();
-    return onVoicesChanged(syncVoices);
+      const syncVoices = () => {
+        setVoices(getArabicVoices());
+        setSelectedVoiceURIState(getSelectedVoice()?.voiceURI || "");
+      };
+      syncVoices();
+      cleanup = onVoicesChanged(syncVoices);
+    }, 0);
+    return () => cleanup();
   }, []);
 
   function chooseVoice(voiceURI: string) {
@@ -223,7 +227,7 @@ export default function DisplayPage() {
 
   useEffect(() => {
     if (!businessDate) return;
-    refresh();
+    setTimeout(() => { refresh(); }, 0);
 
     // Realtime push (instant) — any change to today's tickets triggers
     // a fresh fetch of the computed display payload. A 5s poll is kept

@@ -67,7 +67,9 @@ export default function ViewPage() {
   const [drill, setDrill] = useState<Drill>(null);
 
   useEffect(() => {
-    setBusinessDate(todayBusinessDate());
+    setTimeout(() => {
+      setBusinessDate(todayBusinessDate());
+    }, 0);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -88,7 +90,7 @@ export default function ViewPage() {
 
   useEffect(() => {
     if (!businessDate) return;
-    refresh();
+    setTimeout(() => { refresh(); }, 0);
 
     const channel = supabase
       .channel("counter-view")
