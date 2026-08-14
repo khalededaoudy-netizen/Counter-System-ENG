@@ -35,35 +35,21 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import arabic_reshaper
-from bidi.algorithm import get_display
 from PIL import Image, ImageDraw, ImageFont
 
 # Box measured directly on templates/ticket_template_highres.png
 # (3778x4416, exported from Word at 1200 DPI). Update these four
 # numbers if the template image is ever re-exported at a different
 # resolution/crop.
-NUMBER_BOX = (798, 1699, 2156, 2193)  # left, top, right, bottom
-FONT_SIZE = 440
-RIGHT_GAP = 110  # px gap kept between the number and the "رقم:" label
+NUMBER_BOX = (248, 540, 700, 718)  # left, top, right, bottom
+FONT_SIZE = 150
+RIGHT_GAP = 30  # px gap kept between the number and the "رقم:" label
 FONT_CANDIDATES = (
     r"C:\Windows\Fonts\calibrib.ttf",  # Calibri Bold — closest widely-installed match to the template's Aptos
     r"C:\Windows\Fonts\arialbd.ttf",
 )
 
-# Center point + font size measured off the original template (before
-# the static date/time line was removed from it), so the redrawn line
-# lands exactly where it used to be printed.
-DATETIME_CENTER = (1889, 4158)  # x, y — horizontal center is the page's own center
-DATETIME_FONT_SIZE = 115
-
-
-def _format_datetime_line(moment: datetime) -> str:
-    period = "م" if moment.hour >= 12 else "ص"
-    hour12 = moment.strftime("%I:%M")
-    date_part = moment.strftime("%Y/%m/%d")
-    return f"التاريخ و الوقت: {date_part} {hour12} {period}"
-
+# Center point + font size removed per user request
 
 class TicketImageError(Exception):
     pass
@@ -83,9 +69,6 @@ def render_ticket_image(
     number_padding: int = 0,
     box: tuple[int, int, int, int] = NUMBER_BOX,
     font_size: int = FONT_SIZE,
-    right_gap: int = RIGHT_GAP,
-    datetime_center: tuple[int, int] = DATETIME_CENTER,
-    datetime_font_size: int = DATETIME_FONT_SIZE,
 ) -> Path:
     template_image_path = Path(template_image_path)
     if not template_image_path.exists():
@@ -105,15 +88,10 @@ def render_ticket_image(
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
-    x = right - right_gap - text_w - bbox[0]            # right-aligned, with a gap before "رقم:"
+    x = left + (right - left - text_w) // 2 - bbox[0]   # horizontally centered in the box
     y = top + (bottom - top - text_h) // 2 - bbox[1]    # vertically centered in the box
 
     draw.text((x, y), text, font=font, fill=(0, 0, 0))
-
-    datetime_line = _format_datetime_line(datetime.now())
-    datetime_display = get_display(arabic_reshaper.reshape(datetime_line))
-    datetime_font = _load_font(datetime_font_size)
-    draw.text(datetime_center, datetime_display, font=datetime_font, fill=(0, 0, 0), anchor="mm")
 
     out_path = output_dir / f"ticket_{text}_{uuid.uuid4().hex[:8]}.png"
     im.save(out_path)
