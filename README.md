@@ -1,5 +1,10 @@
 # University Admission Queue & Ticket Management System — Phase 1
 
+### 🌐 Quick Links
+- **Main Website:** [https://counter-system-eng.vercel.app](https://counter-system-eng.vercel.app)
+- **Admission System:** [https://counter-system-eng.vercel.app/admission](https://counter-system-eng.vercel.app/admission)
+- **Calling System:** [https://counter-system-eng.vercel.app/call](https://counter-system-eng.vercel.app/call)
+
 **This document covers Phase 1: the Windows desktop ticket printing
 application.** Phase 2 (public queue display + call-next) is
 implemented, deployed on Vercel/Supabase — see
