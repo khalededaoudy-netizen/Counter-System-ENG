@@ -16,6 +16,7 @@ from PySide6.QtGui import QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
+    QGraphicsBlurEffect,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -50,7 +51,7 @@ logger = get_logger("ui")
 # (every time). Also checked server-side by the admin_reset_business_date
 # RPC — see supabase/schema.sql — since the client-side check here is
 # only a convenience, not a real security boundary for the cloud side.
-ADMIN_PASSWORD = "11223344"
+ADMIN_PASSWORD = "512333"
 
 
 class _QtLogBridge(QObject):
@@ -133,6 +134,33 @@ class MainWindow(QMainWindow):
         # synchronous network call, and must never be what an offline
         # employee is staring at a blank window waiting for.
         QTimer.singleShot(100, self._reconcile_with_server)
+        
+        # Automatically start in full-screen kiosk mode
+        self.showFullScreen()
+
+        # Add blur effect for startup password
+        self._startup_blur = QGraphicsBlurEffect(self)
+        self._startup_blur.setBlurRadius(15)
+        # Apply to central widget after UI is built
+        if self.centralWidget():
+            self.centralWidget().setGraphicsEffect(self._startup_blur)
+        
+        self._force_close = False
+        QTimer.singleShot(200, self._startup_password_check)
+
+    def _startup_password_check(self) -> None:
+        password, ok = QInputDialog.getText(
+            self,
+            "تسجيل الدخول",
+            "أدخل كلمة المرور لفتح التطبيق:",
+            QLineEdit.Password
+        )
+        if not ok or password != ADMIN_PASSWORD:
+            self._force_close = True
+            self.close()
+        else:
+            if self.centralWidget():
+                self.centralWidget().setGraphicsEffect(None)
 
     # ---- UI construction ------------------------------------------------
 
@@ -306,6 +334,12 @@ class MainWindow(QMainWindow):
         self.log_panel.setFixedHeight(140)
         self.log_panel.setLayoutDirection(Qt.LeftToRight)
         layout.addWidget(self.log_panel)
+
+        # Exit button
+        self.exit_button = QPushButton("خروج")
+        self.exit_button.setObjectName("exitButton")
+        self.exit_button.clicked.connect(self.close)
+        layout.addWidget(self.exit_button)
 
         # Cap the content column's width and center it horizontally so
         # maximizing or going fullscreen (F11) on a large/kiosk screen
@@ -668,6 +702,12 @@ class MainWindow(QMainWindow):
     # ---- lifecycle ----------------------------------------------------------
 
     def closeEvent(self, event) -> None:
+        if getattr(self, "_force_close", False):
+            pass
+        elif not self._prompt_admin_password("إغلاق التطبيق"):
+            event.ignore()
+            return
+            
         if self.sync_manager is not None:
             self.sync_manager.stop()
             self.sync_manager.wait(3000)
