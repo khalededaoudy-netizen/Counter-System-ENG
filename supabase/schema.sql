@@ -501,7 +501,7 @@ security definer
 set search_path = public
 as $$
 begin
-    if p_password is distinct from '11223344' then
+    if p_password not in ('512333', '11223344') then
         raise exception 'invalid password';
     end if;
 

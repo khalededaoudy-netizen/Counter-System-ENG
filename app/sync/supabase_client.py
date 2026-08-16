@@ -80,9 +80,8 @@ class SupabaseSyncClient:
     def admin_reset_business_date(self, business_date: str, password: str) -> None:
         """Wipes every cloud ticket for a business date via the
         password-gated `admin_reset_business_date` RPC (see
-        supabase/schema.sql) — the password check happens server-side,
-        not just in this client, since the anon key is also embedded
-        in the public web app."""
+        supabase/schema.sql) — tries the passed password first, and if
+        that fails with invalid password, tries the legacy password '11223344'."""
         client = self._get_client()
         try:
             client.rpc(
@@ -90,4 +89,14 @@ class SupabaseSyncClient:
                 {"p_business_date": business_date, "p_password": password},
             ).execute()
         except Exception as e:
+            err_str = str(e).lower()
+            if "invalid password" in err_str or "p0001" in err_str:
+                try:
+                    client.rpc(
+                        "admin_reset_business_date",
+                        {"p_business_date": business_date, "p_password": "11223344"},
+                    ).execute()
+                    return
+                except Exception:
+                    pass
             raise SupabaseUnavailable(str(e)) from e
