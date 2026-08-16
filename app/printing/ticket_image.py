@@ -72,6 +72,13 @@ def render_ticket_image(
 ) -> Path:
     template_image_path = Path(template_image_path)
     if not template_image_path.exists():
+        import sys
+        if getattr(sys, "frozen", False):
+            alt_path = Path(getattr(sys, "_MEIPASS", "")) / "templates" / template_image_path.name
+            if alt_path.exists():
+                template_image_path = alt_path
+
+    if not template_image_path.exists():
         raise TicketImageError(f"Template image not found: {template_image_path}")
 
     output_dir = Path(output_dir)

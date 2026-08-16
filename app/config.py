@@ -93,7 +93,13 @@ class AppConfig:
 
     def resolve_path(self, relative: str) -> Path:
         p = Path(relative)
-        return p if p.is_absolute() else PROJECT_ROOT / p
+        if p.is_absolute():
+            return p
+        if (PROJECT_ROOT / p).exists():
+            return PROJECT_ROOT / p
+        if (BUNDLE_ROOT / p).exists():
+            return BUNDLE_ROOT / p
+        return PROJECT_ROOT / p
 
 
 def load_config(config_path: str | Path | None = None) -> AppConfig:
