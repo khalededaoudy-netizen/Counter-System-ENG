@@ -285,16 +285,16 @@ class MainWindow(QMainWindow):
 
         # Print buttons
         print_layout = QHBoxLayout()
-        self.print_egyptian_button = QPushButton("طباعة (عامة)")
-        self.print_egyptian_button.setObjectName("printButton")
-        self.print_egyptian_button.clicked.connect(lambda: self._print_next_direct("egyptian", test=False))
+        self.print_engineering_button = QPushButton("طباعة (هندسة)")
+        self.print_engineering_button.setObjectName("printButton")
+        self.print_engineering_button.clicked.connect(lambda: self._print_next_direct("engineering", test=False))
         
-        self.print_azhar_button = QPushButton("طباعة (ازهرية)")
-        self.print_azhar_button.setObjectName("printButton")
-        self.print_azhar_button.clicked.connect(lambda: self._print_next_direct("azhar", test=False))
+        self.print_nursing_button = QPushButton("طباعة (تمريض)")
+        self.print_nursing_button.setObjectName("printButton")
+        self.print_nursing_button.clicked.connect(lambda: self._print_next_direct("nursing", test=False))
 
-        print_layout.addWidget(self.print_egyptian_button)
-        print_layout.addWidget(self.print_azhar_button)
+        print_layout.addWidget(self.print_engineering_button)
+        print_layout.addWidget(self.print_nursing_button)
         layout.addLayout(print_layout)
 
         # Test button: runs the exact same reserve → mark-printed →

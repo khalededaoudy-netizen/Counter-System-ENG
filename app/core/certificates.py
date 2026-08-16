@@ -15,8 +15,8 @@ drift, so this comment is enforced rather than aspirational.
 from __future__ import annotations
 
 CERTIFICATE_TYPES: tuple[tuple[str, str], ...] = (
-    ("egyptian", "الثانوية العامة المصرية"),
-    ("azhar", "ثانوية ازهرية"),
+    ("engineering", "هندسة"),
+    ("nursing", "تمريض"),
 )
 
 CERTIFICATE_VALUES: frozenset[str] = frozenset(value for value, _ in CERTIFICATE_TYPES)

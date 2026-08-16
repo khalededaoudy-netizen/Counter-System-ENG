@@ -111,6 +111,18 @@ QPushButton#cancelButton {
 }
 QPushButton#cancelButton:hover { background-color: #fee2e2; }
 
+QPushButton#exitButton {
+    font-size: 16px;
+    font-weight: 800;
+    color: white;
+    background-color: #dc2626;
+    border-radius: 8px;
+    padding: 12px;
+}
+QPushButton#exitButton:hover {
+    background-color: #b91c1c;
+}
+
 QFrame#card {
     background-color: white;
     border-radius: 12px;

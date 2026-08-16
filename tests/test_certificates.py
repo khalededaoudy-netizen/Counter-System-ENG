@@ -43,27 +43,16 @@ def test_certificate_values_are_unique():
     assert len(values) == len(set(values))
 
 
-def test_the_thirteen_expected_certificates_are_present():
+def test_the_expected_certificates_are_present():
     assert [value for value, _ in CERTIFICATE_TYPES] == [
-        "ig",
-        "saudi",
-        "qatari",
-        "bahraini",
-        "kuwaiti",
-        "omani",
-        "yemeni",
-        "palestinian",
-        "egyptian",
-        "azhar",
-        "emirati",
-        "americanDiploma",
-        "other",
+        "engineering",
+        "nursing",
     ]
 
 
 def test_label_lookup_and_validation():
-    assert certificate_label("egyptian") == "الثانوية العامة المصرية"
-    assert is_valid_certificate("egyptian")
+    assert certificate_label("engineering") == "هندسة"
+    assert is_valid_certificate("engineering")
     assert not is_valid_certificate("not-a-real-certificate")
 
     # A ticket printed before certificates existed has no type — every

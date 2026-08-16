@@ -17,8 +17,8 @@ export type CertificateType = {
 };
 
 export const CERTIFICATE_TYPES: CertificateType[] = [
-  { value: "egyptian", label: "الثانوية العامة المصرية" },
-  { value: "azhar", label: "ثانوية ازهرية" },
+  { value: "engineering", label: "هندسة" },
+  { value: "nursing", label: "تمريض" },
 ];
 
 const LABELS = new Map(CERTIFICATE_TYPES.map((c) => [c.value, c.label]));
