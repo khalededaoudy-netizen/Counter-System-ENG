@@ -435,13 +435,13 @@ class MainWindow(QMainWindow):
                 f"إعادة طباعة الرقم {unresolved.ticket_number}"
                 f" ({certificate_label(unresolved.certificate_type)})"
             )
-            self.print_egyptian_button.setEnabled(False)
-            self.print_azhar_button.setEnabled(False)
+            self.print_engineering_button.setEnabled(False)
+            self.print_nursing_button.setEnabled(False)
             self.test_button.setEnabled(False)
         else:
             self.warning_frame.hide()
-            self.print_egyptian_button.setEnabled(True)
-            self.print_azhar_button.setEnabled(True)
+            self.print_engineering_button.setEnabled(True)
+            self.print_nursing_button.setEnabled(True)
             self.test_button.setEnabled(True)
 
     def _append_log(self, line: str) -> None:
