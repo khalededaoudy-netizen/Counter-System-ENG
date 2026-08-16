@@ -52,7 +52,7 @@ class SupabaseSyncClient:
             "updated_at": ticket.updated_at,
         }
         try:
-            client.table("tickets").upsert(payload, on_conflict="uuid").execute()
+            client.table("tickets").upsert(payload, on_conflict="business_date, ticket_number").execute()
         except Exception as e:
             raise SupabaseUnavailable(str(e)) from e
 
