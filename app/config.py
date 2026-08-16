@@ -21,8 +21,10 @@ from dotenv import load_dotenv
 # the .exe are found correctly.
 if getattr(sys, "frozen", False):
     PROJECT_ROOT = Path(sys.executable).resolve().parent
+    BUNDLE_ROOT = Path(getattr(sys, "_MEIPASS", PROJECT_ROOT))
 else:
     PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    BUNDLE_ROOT = PROJECT_ROOT
 
 
 @dataclass
@@ -72,6 +74,7 @@ class WebConfig:
     # it at http://<this-pc-ip>:<port> — not just localhost.
     host: str = "0.0.0.0"
     port: int = 8000
+    display_url: str = "https://znu-counter-voice.vercel.app"
     next_numbers_count: int = 5
 
 
@@ -94,21 +97,20 @@ class AppConfig:
 
 
 def load_config(config_path: str | Path | None = None) -> AppConfig:
-    load_dotenv(PROJECT_ROOT / ".env")
+    if (PROJECT_ROOT / ".env").exists():
+        load_dotenv(PROJECT_ROOT / ".env")
+    elif (BUNDLE_ROOT / ".env").exists():
+        load_dotenv(BUNDLE_ROOT / ".env")
 
     config_path = Path(config_path) if config_path else PROJECT_ROOT / "config" / "config.yaml"
     if not config_path.exists():
-        # Every value in config.example.yaml is already a safe default
-        # (printer name "" just means "no override yet" — the UI's
-        # printer picker fills that in and persists it via
-        # save_config()) so a first run on a new machine should just
-        # work, not force a manual copy/edit step before the app will
-        # even open.
         example = PROJECT_ROOT / "config" / "config.example.yaml"
+        if not example.exists():
+            example = BUNDLE_ROOT / "config" / "config.example.yaml"
         if not example.exists():
             raise FileNotFoundError(
                 f"Config file not found: {config_path}\n"
-                f"config.example.yaml is also missing from {example.parent} — reinstall the app."
+                f"config.example.yaml is also missing — reinstall the app."
             )
         config_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(example, config_path)
