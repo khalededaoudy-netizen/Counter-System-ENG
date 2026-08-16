@@ -287,11 +287,11 @@ class MainWindow(QMainWindow):
         print_layout = QHBoxLayout()
         self.print_engineering_button = QPushButton("طباعة (هندسة)")
         self.print_engineering_button.setObjectName("printButton")
-        self.print_engineering_button.clicked.connect(lambda: self._print_next_direct("engineering", test=False))
+        self.print_engineering_button.clicked.connect(lambda *_args: self._print_next_direct("engineering", test=False))
         
         self.print_nursing_button = QPushButton("طباعة (تمريض)")
         self.print_nursing_button.setObjectName("printButton")
-        self.print_nursing_button.clicked.connect(lambda: self._print_next_direct("nursing", test=False))
+        self.print_nursing_button.clicked.connect(lambda *_args: self._print_next_direct("nursing", test=False))
 
         print_layout.addWidget(self.print_engineering_button)
         print_layout.addWidget(self.print_nursing_button)
@@ -548,8 +548,8 @@ class MainWindow(QMainWindow):
 
     def _print_next_direct(self, certificate_type: str, test: bool) -> None:
         self.error_label.setText("")
-        self.print_egyptian_button.setEnabled(False)
-        self.print_azhar_button.setEnabled(False)
+        self.print_engineering_button.setEnabled(False)
+        self.print_nursing_button.setEnabled(False)
         self.test_button.setEnabled(False)
         try:
             ticket = self.ticket_service.reserve_next_ticket(self.session.id, certificate_type)
