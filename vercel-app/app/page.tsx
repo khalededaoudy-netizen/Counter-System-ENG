@@ -49,17 +49,16 @@ const CALLED_STATUSES = [
 
 type DisplayData = {
   // Last 5 calls, most recent first — not just the single latest one.
-  // If counter 3 calls #45 and counter 5 calls #46 a moment later,
-  // #45's "go to counter 3" must stay on screen, not vanish the
-  // instant a different counter calls someone else.
   recentlyCalled: CalledEntry[];
-  nextNumbers: number[];
+  reviewWaitingNumbers: number[];
+  admissionWaitingNumbers: number[];
   stats: { totalToday: number; waiting: number; called: number };
 };
 
 const EMPTY: DisplayData = {
   recentlyCalled: [],
-  nextNumbers: [],
+  reviewWaitingNumbers: [],
+  admissionWaitingNumbers: [],
   stats: { totalToday: 0, waiting: 0, called: 0 },
 };
 
@@ -67,7 +66,8 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
   const [
     { data: calledRows },
     { data: admissionRows },
-    { data: waitingRows },
+    { data: reviewWaitingRows },
+    { data: admissionWaitingRows },
     { count: totalToday },
     { count: waiting },
     { count: called },
@@ -93,7 +93,14 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
       .eq("status", "PRINTED")
       .is("called_at", null)
       .order("ticket_number", { ascending: true })
-      .limit(6),
+      .limit(8),
+    supabase
+      .from("tickets")
+      .select("ticket_number")
+      .eq("business_date", businessDate)
+      .eq("status", "WAITING_FOR_ADMISSION")
+      .order("ticket_number", { ascending: true })
+      .limit(8),
     supabase
       .from("tickets")
       .select("uuid", { count: "exact", head: true })
@@ -103,8 +110,7 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
       .from("tickets")
       .select("uuid", { count: "exact", head: true })
       .eq("business_date", businessDate)
-      .eq("status", "PRINTED")
-      .is("called_at", null),
+      .in("status", ["PRINTED", "WAITING_FOR_ADMISSION"]),
     supabase
       .from("tickets")
       .select("uuid", { count: "exact", head: true })
@@ -135,7 +141,8 @@ async function fetchDisplayData(businessDate: string): Promise<DisplayData> {
 
   return {
     recentlyCalled: merged,
-    nextNumbers: (waitingRows || []).map((r: any) => r.ticket_number),
+    reviewWaitingNumbers: (reviewWaitingRows || []).map((r: any) => r.ticket_number),
+    admissionWaitingNumbers: (admissionWaitingRows || []).map((r: any) => r.ticket_number),
     stats: {
       totalToday: totalToday ?? 0,
       waiting: waiting ?? 0,
@@ -250,14 +257,46 @@ export default function DisplayPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center px-6 py-10 gap-8">
-      <header className="flex flex-col items-center text-center gap-3">
+      <header className="flex flex-col items-center text-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/university-logo.png" alt="جامعة الزقازيق الأهلية" className="w-24 h-24 sm:w-32 sm:h-32" />
+        <div className="flex items-center justify-center gap-6 sm:gap-10">
+          {/* Left logo: University Student Union */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/union-logo.png"
+            alt="اتحاد الطلاب"
+            className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+          {/* Center logo: University logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/university-logo.png"
+            alt="جامعة الزقازيق الأهلية"
+            className="w-24 h-24 sm:w-32 sm:h-32 object-contain"
+          />
+          {/* Right logo: Engineering Student Union */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/eng-union-logo.png"
+            alt="اتحاد طلاب كلية الهندسة"
+            className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+        </div>
+
         <div>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-wide text-blue-300">
             أهلاً بكم في جامعة الزقازيق الأهلية
           </h1>
-          <div className="text-slate-500 mt-1 text-sm">{businessDate}</div>
+          <h2 className="text-xl sm:text-3xl font-bold text-amber-300 mt-2">
+            اتحاد طلاب كلية الهندسة يرحب بكم
+          </h2>
+          <div className="text-slate-500 mt-2 text-sm">{businessDate}</div>
         </div>
       </header>
 
@@ -303,24 +342,58 @@ export default function DisplayPage() {
             )}
           </section>
 
-          <section className="bg-slate-900 border-2 border-slate-800 rounded-3xl px-6 py-6 flex flex-col gap-3">
-            <div className="text-slate-400 tracking-widest text-sm sm:text-lg font-bold text-center">الانتظار</div>
-            {data.nextNumbers.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-slate-500 py-10">
-                لا يوجد أحد في الانتظار
+          <section className="bg-slate-900 border-2 border-slate-800 rounded-3xl px-6 py-6 flex flex-col gap-5">
+            <div className="text-slate-300 tracking-widest text-sm sm:text-lg font-bold text-center border-b border-slate-800 pb-2">
+              الانتظار
+            </div>
+
+            {/* Sub-section 1: انتظار المراجعة */}
+            <div className="flex flex-col gap-2.5">
+              <div className="text-blue-300 text-sm sm:text-base font-bold flex items-center justify-between">
+                <span>انتظار المراجعة</span>
+                <span className="text-slate-400 text-xs font-normal">({data.reviewWaitingNumbers.length})</span>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 content-start">
-                {data.nextNumbers.map((n) => (
-                  <div
-                    key={n}
-                    className="bg-slate-800 rounded-xl py-4 text-2xl sm:text-3xl font-bold text-center"
-                  >
-                    {n}
-                  </div>
-                ))}
+              {data.reviewWaitingNumbers.length === 0 ? (
+                <div className="bg-slate-950/40 rounded-xl py-3 text-center text-slate-500 text-sm">
+                  لا يوجد أحد في انتظار المراجعة
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {data.reviewWaitingNumbers.map((n) => (
+                    <div
+                      key={n}
+                      className="bg-slate-800/90 border border-slate-700/60 rounded-xl py-3 text-xl sm:text-2xl font-bold text-center text-blue-200"
+                    >
+                      {n}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sub-section 2: انتظار الشؤون */}
+            <div className="flex flex-col gap-2.5">
+              <div className="text-emerald-300 text-sm sm:text-base font-bold flex items-center justify-between">
+                <span>انتظار الشؤون</span>
+                <span className="text-slate-400 text-xs font-normal">({data.admissionWaitingNumbers.length})</span>
               </div>
-            )}
+              {data.admissionWaitingNumbers.length === 0 ? (
+                <div className="bg-slate-950/40 rounded-xl py-3 text-center text-slate-500 text-sm">
+                  لا يوجد أحد في انتظار الشؤون
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {data.admissionWaitingNumbers.map((n) => (
+                    <div
+                      key={n}
+                      className="bg-emerald-950/50 border border-emerald-800/60 rounded-xl py-3 text-xl sm:text-2xl font-bold text-center text-emerald-200"
+                    >
+                      {n}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         </div>
 
