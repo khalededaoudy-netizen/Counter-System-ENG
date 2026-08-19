@@ -293,8 +293,8 @@ export default function DisplayPage() {
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-wide text-blue-300">
             أهلاً بكم في جامعة الزقازيق الأهلية
           </h1>
-          <h2 className="text-xl sm:text-3xl font-bold text-amber-300 mt-2">
-            اتحاد طلاب كلية الهندسة يرحب بكم
+          <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-widest mt-2.5">
+            اتحـاد طـلاب كليـة الـهـندسـة يرحب بكم
           </h2>
           <div className="text-slate-500 mt-2 text-sm">{businessDate}</div>
         </div>
