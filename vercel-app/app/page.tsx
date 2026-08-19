@@ -265,7 +265,7 @@ export default function DisplayPage() {
           <img
             src="/union-logo.png"
             alt="اتحاد الطلاب"
-            className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+            className="w-20 h-20 sm:w-32 sm:h-32 object-contain drop-shadow-md"
             onError={(e) => {
               (e.target as HTMLElement).style.display = "none";
             }}
@@ -275,14 +275,14 @@ export default function DisplayPage() {
           <img
             src="/university-logo.png"
             alt="جامعة الزقازيق الأهلية"
-            className="w-24 h-24 sm:w-32 sm:h-32 object-contain"
+            className="w-24 h-24 sm:w-36 sm:h-36 object-contain drop-shadow-md"
           />
           {/* Right logo: Engineering Student Union */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/eng-union-logo.png"
             alt="اتحاد طلاب كلية الهندسة"
-            className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+            className="w-20 h-20 sm:w-32 sm:h-32 object-contain drop-shadow-md"
             onError={(e) => {
               (e.target as HTMLElement).style.display = "none";
             }}
@@ -294,7 +294,7 @@ export default function DisplayPage() {
             أهلاً بكم في جامعة الزقازيق الأهلية
           </h1>
           <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-widest mt-2.5">
-            اتحـاد طـلاب كليـة الـهـندسـة يرحب بكم
+            اتحـاد طـلاب كليـة الـهـندسـة
           </h2>
           <div className="text-slate-500 mt-2 text-sm">{businessDate}</div>
         </div>
