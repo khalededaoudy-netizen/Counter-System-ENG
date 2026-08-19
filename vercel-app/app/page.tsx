@@ -300,23 +300,24 @@ export default function DisplayPage() {
         </div>
       </header>
 
-      <main className="w-full max-w-5xl flex flex-col items-center gap-8">
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-          <section className="bg-slate-900 border-2 border-blue-900 rounded-3xl px-6 py-6 flex flex-col gap-3">
-            <div className="text-blue-300 tracking-widest text-sm sm:text-lg font-bold text-center">
-              يتم خدمته الآن
+      <main className="w-full max-w-5xl flex flex-col items-center gap-6">
+        {/* Top Section: يتم خدمته الآن (Full Width) */}
+        <section className="w-full bg-slate-900 border-2 border-blue-900 rounded-3xl px-6 py-6 flex flex-col gap-4 shadow-xl">
+          <div className="text-blue-300 tracking-wider text-lg sm:text-2xl font-extrabold text-end border-b border-slate-800 pb-3">
+            يتم خدمته الآن
+          </div>
+          {data.recentlyCalled.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-slate-500 font-bold text-lg sm:text-2xl py-12">
+              في انتظار بدء الخدمة
             </div>
-            {data.recentlyCalled.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-slate-600 font-extrabold text-[90px] py-10">
-                —
-              </div>
-            ) : (
-              data.recentlyCalled.map((c, i) => (
+          ) : (
+            <div className="flex flex-col gap-3">
+              {data.recentlyCalled.map((c, i) => (
                 <div
                   key={`${c.kind}-${c.at}-${c.ticketNumber}`}
-                  className={`flex items-center justify-between gap-3 rounded-2xl px-6 transition-colors duration-700 ${
+                  className={`flex items-center justify-between gap-4 rounded-2xl px-6 transition-colors duration-700 ${
                     i === 0
-                      ? `py-5 ${flash ? "bg-green-900/60" : "bg-blue-950/60"} border border-blue-800`
+                      ? `py-5 ${flash ? "bg-green-900/60" : "bg-blue-950/60"} border border-blue-800 shadow-lg`
                       : "py-3 bg-slate-800/60"
                   }`}
                 >
@@ -324,76 +325,81 @@ export default function DisplayPage() {
                     {c.ticketNumber}
                   </span>
                   {c.kind === "counter" ? (
-                    <span className={`font-bold text-end ${i === 0 ? "text-2xl sm:text-3xl text-blue-300" : "text-lg sm:text-xl text-blue-400"}`}>
+                    <span className={`font-bold text-end ${i === 0 ? "text-2xl sm:text-4xl text-blue-300" : "text-lg sm:text-2xl text-blue-400"}`}>
                       مكتب رقم {c.counterNumber}
                     </span>
                   ) : (
                     <span className={`font-bold text-end ${i === 0 ? "text-emerald-300" : "text-emerald-400"}`}>
-                      <span className={i === 0 ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"}>
+                      <span className={i === 0 ? "text-2xl sm:text-4xl" : "text-lg sm:text-2xl"}>
                         شؤون الطلاب
                       </span>
-                      <span className={`block ${i === 0 ? "text-base sm:text-xl" : "text-xs sm:text-sm"} opacity-80`}>
+                      <span className={`block ${i === 0 ? "text-base sm:text-xl" : "text-xs sm:text-sm"} opacity-80 mt-0.5`}>
                         {certificateLabel(c.certificateType)}
                       </span>
                     </span>
                   )}
                 </div>
-              ))
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Bottom Section: 2 Columns for waiting (انتظار المراجعة & انتظار الشؤون) */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Column 1: انتظار المراجعة */}
+          <section className="bg-slate-900 border-2 border-slate-800 rounded-3xl px-6 py-6 flex flex-col gap-4 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-slate-400 text-xs sm:text-sm font-semibold">
+                العدد: {data.reviewWaitingNumbers.length}
+              </span>
+              <span className="text-blue-300 text-lg sm:text-xl font-extrabold">
+                انتظار المراجعة
+              </span>
+            </div>
+            {data.reviewWaitingNumbers.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-sm sm:text-base">
+                لا يوجد أحد في الانتظار
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 content-start">
+                {data.reviewWaitingNumbers.map((n) => (
+                  <div
+                    key={n}
+                    className="bg-slate-800/90 border border-slate-700/60 rounded-2xl py-3.5 text-2xl sm:text-3xl font-bold text-center text-blue-200 shadow-sm"
+                  >
+                    {n}
+                  </div>
+                ))}
+              </div>
             )}
           </section>
 
-          <section className="bg-slate-900 border-2 border-slate-800 rounded-3xl px-6 py-6 flex flex-col gap-5">
-            <div className="text-slate-300 tracking-widest text-sm sm:text-lg font-bold text-center border-b border-slate-800 pb-2">
-              الانتظار
+          {/* Column 2: انتظار الشؤون */}
+          <section className="bg-slate-900 border-2 border-slate-800 rounded-3xl px-6 py-6 flex flex-col gap-4 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-slate-400 text-xs sm:text-sm font-semibold">
+                العدد: {data.admissionWaitingNumbers.length}
+              </span>
+              <span className="text-emerald-300 text-lg sm:text-xl font-extrabold">
+                انتظار الشؤون
+              </span>
             </div>
-
-            {/* Sub-section 1: انتظار المراجعة */}
-            <div className="flex flex-col gap-2.5">
-              <div className="text-blue-300 text-sm sm:text-base font-bold flex items-center justify-between">
-                <span>انتظار المراجعة</span>
-                <span className="text-slate-400 text-xs font-normal">({data.reviewWaitingNumbers.length})</span>
+            {data.admissionWaitingNumbers.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-sm sm:text-base">
+                لا يوجد أحد في الانتظار
               </div>
-              {data.reviewWaitingNumbers.length === 0 ? (
-                <div className="bg-slate-950/40 rounded-xl py-3 text-center text-slate-500 text-sm">
-                  لا يوجد أحد في انتظار المراجعة
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {data.reviewWaitingNumbers.map((n) => (
-                    <div
-                      key={n}
-                      className="bg-slate-800/90 border border-slate-700/60 rounded-xl py-3 text-xl sm:text-2xl font-bold text-center text-blue-200"
-                    >
-                      {n}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Sub-section 2: انتظار الشؤون */}
-            <div className="flex flex-col gap-2.5">
-              <div className="text-emerald-300 text-sm sm:text-base font-bold flex items-center justify-between">
-                <span>انتظار الشؤون</span>
-                <span className="text-slate-400 text-xs font-normal">({data.admissionWaitingNumbers.length})</span>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 content-start">
+                {data.admissionWaitingNumbers.map((n) => (
+                  <div
+                    key={n}
+                    className="bg-emerald-950/50 border border-emerald-800/60 rounded-2xl py-3.5 text-2xl sm:text-3xl font-bold text-center text-emerald-200 shadow-sm"
+                  >
+                    {n}
+                  </div>
+                ))}
               </div>
-              {data.admissionWaitingNumbers.length === 0 ? (
-                <div className="bg-slate-950/40 rounded-xl py-3 text-center text-slate-500 text-sm">
-                  لا يوجد أحد في انتظار الشؤون
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {data.admissionWaitingNumbers.map((n) => (
-                    <div
-                      key={n}
-                      className="bg-emerald-950/50 border border-emerald-800/60 rounded-xl py-3 text-xl sm:text-2xl font-bold text-center text-emerald-200"
-                    >
-                      {n}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </section>
         </div>
 
