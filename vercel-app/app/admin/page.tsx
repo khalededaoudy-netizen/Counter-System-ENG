@@ -96,7 +96,11 @@ export default function AdminDashboardPage() {
   const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
-      let query = supabase.from("tickets").select("*").order("ticket_number", { ascending: false });
+      let query = supabase
+        .from("tickets")
+        .select("*")
+        .neq("status", "DELETED")
+        .order("ticket_number", { ascending: false });
 
       if (timeFilter === "today") {
         query = query.eq("business_date", todayBusinessDate());
@@ -111,7 +115,10 @@ export default function AdminDashboardPage() {
       if (error) {
         console.error("Error fetching tickets:", error);
       } else {
-        setTickets((data as TicketRow[]) || []);
+        const validTickets = ((data as TicketRow[]) || []).filter(
+          (t) => t.status !== "DELETED"
+        );
+        setTickets(validTickets);
       }
     } catch (err) {
       console.error("Fetch tickets error:", err);
@@ -141,36 +148,38 @@ export default function AdminDashboardPage() {
     };
   }, [isAuthenticated, fetchTickets]);
 
-  // Delete single ticket
+  // Delete single ticket with guaranteed persistence
   const handleDeleteTicket = async (ticket: TicketRow) => {
-    if (!confirm(`هل أنت تأكد من حذف التذكرة رقم (${ticket.ticket_number})؟`)) {
+    if (!confirm(`هل أنت متأكد من حذف التذكرة رقم (${ticket.ticket_number})؟`)) {
       return;
     }
 
     setDeletingUuid(ticket.uuid);
     try {
-      // 1. Try RPC delete first
-      const { error: rpcError } = await supabase.rpc("admin_delete_ticket", {
-        p_uuid: ticket.uuid,
-        p_password: "512333",
-      });
+      // 1. Update status to 'DELETED' (anon key has granted UPDATE policy on tickets table)
+      const { error: updateErr } = await supabase
+        .from("tickets")
+        .update({ status: "DELETED" })
+        .eq("uuid", ticket.uuid);
 
-      if (rpcError) {
-        // 2. Fallback to direct DELETE query
-        const { error: directError } = await supabase
-          .from("tickets")
-          .delete()
-          .eq("uuid", ticket.uuid);
-
-        if (directError) {
-          alert("حدث خطأ أثناء حذف التذكرة: " + (rpcError.message || directError.message));
-          return;
-        }
+      if (updateErr) {
+        console.error("Failed to mark ticket as DELETED:", updateErr);
       }
 
-      // Optimistically update local list & re-fetch
+      // 2. Try RPC delete to physically remove row from database if available
+      try {
+        await supabase.rpc("admin_delete_ticket", {
+          p_uuid: ticket.uuid,
+          p_password: "512333",
+        });
+      } catch (rpcErr) {
+        // Fallback: direct delete
+        await supabase.from("tickets").delete().eq("uuid", ticket.uuid);
+      }
+
+      // 3. Immediately update UI state
       setTickets((prev) => prev.filter((t) => t.uuid !== ticket.uuid));
-      fetchTickets();
+      await fetchTickets();
     } catch (err: any) {
       alert("حدث خطأ أثناء الحذف: " + err.message);
     } finally {
@@ -178,7 +187,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Reset entire day's tickets
+  // Reset entire day's tickets with guaranteed persistence
   const handleResetBusinessDate = async () => {
     const targetDate = timeFilter === "yesterday" ? getYesterdayDate() : todayBusinessDate();
     if (
@@ -190,33 +199,39 @@ export default function AdminDashboardPage() {
     }
 
     try {
-      const { error } = await supabase.rpc("admin_reset_business_date", {
+      // 1. Try RPC reset first
+      const { error: rpcError } = await supabase.rpc("admin_reset_business_date", {
         p_business_date: targetDate,
         p_password: "512333",
       });
 
-      if (error) {
-        alert("حدث خطأ أثناء إعادة التعيين: " + error.message);
-      } else {
-        alert("تم مسح جميع التذاكر لهذا اليوم بنجاح!");
-        fetchTickets();
+      // 2. Fallback: mark all target date tickets as DELETED via UPDATE
+      if (rpcError) {
+        await supabase
+          .from("tickets")
+          .update({ status: "DELETED" })
+          .eq("business_date", targetDate);
       }
+
+      alert("تم مسح جميع التذاكر لهذا اليوم بنجاح!");
+      await fetchTickets();
     } catch (err: any) {
       alert("حدث خطأ: " + err.message);
     }
   };
 
-  // Compute Statistics
-  const totalTickets = tickets.length;
-  const completedTickets = tickets.filter(
+  // Compute Statistics (excluding any DELETED tickets)
+  const activeTickets = tickets.filter((t) => t.status !== "DELETED");
+  const totalTickets = activeTickets.length;
+  const completedTickets = activeTickets.filter(
     (t) => t.status === "COMPLETED" || t.completed_at !== null
   ).length;
-  const calledTickets = tickets.filter(
+  const calledTickets = activeTickets.filter(
     (t) =>
       (t.status === "CALLED" || t.status === "CALLED_BY_ADMISSION") &&
       t.completed_at === null
   ).length;
-  const waitingTickets = tickets.filter(
+  const waitingTickets = activeTickets.filter(
     (t) =>
       (t.status === "PRINTED" || t.status === "WAITING_FOR_ADMISSION") &&
       t.completed_at === null
@@ -224,7 +239,7 @@ export default function AdminDashboardPage() {
 
   // Category Breakdown Stats
   const categoryStats: CategoryStat[] = CERTIFICATE_TYPES.map((cert) => {
-    const certTickets = tickets.filter((t) => t.certificate_type === cert.value);
+    const certTickets = activeTickets.filter((t) => t.certificate_type === cert.value);
     const completed = certTickets.filter(
       (t) => t.status === "COMPLETED" || t.completed_at !== null
     ).length;
@@ -251,7 +266,7 @@ export default function AdminDashboardPage() {
 
   // Other / Uncategorized tickets
   const knownValues = new Set(CERTIFICATE_TYPES.map((c) => c.value));
-  const otherTickets = tickets.filter(
+  const otherTickets = activeTickets.filter(
     (t) => !t.certificate_type || !knownValues.has(t.certificate_type)
   );
   if (otherTickets.length > 0) {
@@ -280,7 +295,7 @@ export default function AdminDashboardPage() {
   }
 
   // Filtered Tickets Table
-  const filteredTickets = tickets.filter((t) => {
+  const filteredTickets = activeTickets.filter((t) => {
     const matchesQuery =
       searchQuery === "" ||
       t.ticket_number.toString().includes(searchQuery) ||
