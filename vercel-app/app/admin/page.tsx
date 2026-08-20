@@ -61,6 +61,7 @@ export default function AdminDashboardPage() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
   const [tickets, setTickets] = useState<TicketRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingUuid, setDeletingUuid] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
 
@@ -139,6 +140,71 @@ export default function AdminDashboardPage() {
       supabase.removeChannel(channel);
     };
   }, [isAuthenticated, fetchTickets]);
+
+  // Delete single ticket
+  const handleDeleteTicket = async (ticket: TicketRow) => {
+    if (!confirm(`هل أنت تأكد من حذف التذكرة رقم (${ticket.ticket_number})؟`)) {
+      return;
+    }
+
+    setDeletingUuid(ticket.uuid);
+    try {
+      // 1. Try RPC delete first
+      const { error: rpcError } = await supabase.rpc("admin_delete_ticket", {
+        p_uuid: ticket.uuid,
+        p_password: "512333",
+      });
+
+      if (rpcError) {
+        // 2. Fallback to direct DELETE query
+        const { error: directError } = await supabase
+          .from("tickets")
+          .delete()
+          .eq("uuid", ticket.uuid);
+
+        if (directError) {
+          alert("حدث خطأ أثناء حذف التذكرة: " + (rpcError.message || directError.message));
+          return;
+        }
+      }
+
+      // Optimistically update local list & re-fetch
+      setTickets((prev) => prev.filter((t) => t.uuid !== ticket.uuid));
+      fetchTickets();
+    } catch (err: any) {
+      alert("حدث خطأ أثناء الحذف: " + err.message);
+    } finally {
+      setDeletingUuid(null);
+    }
+  };
+
+  // Reset entire day's tickets
+  const handleResetBusinessDate = async () => {
+    const targetDate = timeFilter === "yesterday" ? getYesterdayDate() : todayBusinessDate();
+    if (
+      !confirm(
+        `⚠️ تحذير مهم:\nهل أنت متأكد من مسح جميع التذاكر المسجلة بتاريخ (${targetDate})؟\nهذا الإجراء مسح كامل لا يمكن التراجع عنه.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.rpc("admin_reset_business_date", {
+        p_business_date: targetDate,
+        p_password: "512333",
+      });
+
+      if (error) {
+        alert("حدث خطأ أثناء إعادة التعيين: " + error.message);
+      } else {
+        alert("تم مسح جميع التذاكر لهذا اليوم بنجاح!");
+        fetchTickets();
+      }
+    } catch (err: any) {
+      alert("حدث خطأ: " + err.message);
+    }
+  };
 
   // Compute Statistics
   const totalTickets = tickets.length;
@@ -408,6 +474,14 @@ export default function AdminDashboardPage() {
           </button>
 
           <button
+            onClick={handleResetBusinessDate}
+            className="bg-amber-950/80 hover:bg-amber-900 border border-amber-800 text-amber-300 font-bold text-xs sm:text-sm rounded-xl px-4 py-2.5 transition-colors"
+            title="مسح جميع تذاكر اليوم لتصفير الترقيم والاختبار"
+          >
+            ⚠️ مسح تذاكر اليوم
+          </button>
+
+          <button
             onClick={handleLogout}
             className="bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-xs sm:text-sm rounded-xl px-4 py-2.5 transition-colors"
           >
@@ -570,7 +644,7 @@ export default function AdminDashboardPage() {
             <div>
               <h2 className="text-xl font-extrabold text-slate-200">📋 سجل التذاكر التفصيلي</h2>
               <p className="text-slate-400 text-xs mt-1">
-                عرض التذاكر المحددة حسب النطاق والتأكد من أوقات التناول والإكمال
+                عرض التذاكر المحددة وإمكانية حذف أي تذكرة تجريبية بسهولة
               </p>
             </div>
 
@@ -613,13 +687,14 @@ export default function AdminDashboardPage() {
                   <th className="px-4 py-3">مكتب المراجعة</th>
                   <th className="px-4 py-3">مكتب الشؤون</th>
                   <th className="px-4 py-3">وقت النداء</th>
-                  <th className="px-4 py-3 rounded-l-xl">وقت الإكمال</th>
+                  <th className="px-4 py-3">وقت الإكمال</th>
+                  <th className="px-4 py-3 rounded-l-xl text-center">إجراءات</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredTickets.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-500 font-semibold">
+                    <td colSpan={9} className="text-center py-8 text-slate-500 font-semibold">
                       لا توجد تذاكر مطابقة للبحث أو النطاق المحدد
                     </td>
                   </tr>
@@ -653,6 +728,16 @@ export default function AdminDashboardPage() {
                         {t.completed_at
                           ? new Date(t.completed_at).toLocaleTimeString("ar-EG")
                           : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => handleDeleteTicket(t)}
+                          disabled={deletingUuid === t.uuid}
+                          className="bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 hover:text-red-100 font-bold text-xs rounded-xl px-3 py-1.5 transition-colors disabled:opacity-50"
+                          title="حذف هذه التذكرة"
+                        >
+                          {deletingUuid === t.uuid ? "جاري الحذف..." : "🗑️ حذف"}
+                        </button>
                       </td>
                     </tr>
                   ))
