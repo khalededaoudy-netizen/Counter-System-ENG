@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { supabase, todayBusinessDate } from "@/lib/supabaseClient";
 import { certificateLabel } from "@/lib/certificates";
 import {
@@ -296,7 +297,15 @@ export default function DisplayPage() {
           <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-widest mt-2.5">
             اتحـاد طـلاب كليـة الـهـندسـة
           </h2>
-          <div className="text-slate-500 mt-2 text-sm">{businessDate}</div>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <span className="text-slate-500 text-sm">{businessDate}</span>
+            <Link
+              href="/admin"
+              className="text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-blue-300 font-bold px-3 py-1 rounded-xl transition-colors"
+            >
+              📊 لوحة التحكم
+            </Link>
+          </div>
         </div>
       </header>
 
