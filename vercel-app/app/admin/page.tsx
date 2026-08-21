@@ -220,6 +220,60 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Seed 40 test tickets for testing audio / workflow
+  const handleSeed40Tickets = async () => {
+    if (!confirm("هل تريد إضافة 40 تذكرة تجريبية (مزيج من هندسة وتمريض لمكاتب المراجعة والشؤون)؟")) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const bDate = todayBusinessDate();
+      const now = new Date().toISOString();
+      const newTickets = [];
+
+      // 1-20: PRINTED (Review stage - /call)
+      for (let i = 1; i <= 20; i++) {
+        newTickets.push({
+          uuid: crypto.randomUUID(),
+          ticket_number: i,
+          business_date: bDate,
+          status: "PRINTED",
+          certificate_type: i % 2 === 1 ? "engineering" : "nursing",
+          printed_at: now,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+
+      // 21-40: WAITING_FOR_ADMISSION (Admission stage - /admission)
+      for (let i = 21; i <= 40; i++) {
+        newTickets.push({
+          uuid: crypto.randomUUID(),
+          ticket_number: i,
+          business_date: bDate,
+          status: "WAITING_FOR_ADMISSION",
+          certificate_type: i % 2 === 1 ? "engineering" : "nursing",
+          printed_at: now,
+          first_review_completed_at: now,
+          created_at: now,
+          updated_at: now,
+        });
+      }
+
+      const { error } = await supabase.from("tickets").upsert(newTickets, { onConflict: "business_date,ticket_number" });
+      if (error) {
+        alert("حدث خطأ أثناء إضافة التذاكر التجريبية: " + error.message);
+      } else {
+        alert("تمت إضافة 40 تذكرة تجريبية بنجاح! يمكنك الآن تجربة النداء في المراجعة والشؤون.");
+        await fetchTickets();
+      }
+    } catch (err: any) {
+      alert("حدث خطأ: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Compute Statistics (excluding any DELETED tickets)
   const activeTickets = tickets.filter((t) => t.status !== "DELETED");
   const totalTickets = activeTickets.length;
@@ -486,6 +540,14 @@ export default function AdminDashboardPage() {
             className="bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl px-4 py-2.5 transition-colors disabled:opacity-50"
           >
             🔄 {loading ? "جاري التحديث..." : "تحديث البيانات"}
+          </button>
+
+          <button
+            onClick={handleSeed40Tickets}
+            className="bg-purple-900/80 hover:bg-purple-800 border border-purple-700 text-purple-200 font-bold text-xs sm:text-sm rounded-xl px-4 py-2.5 transition-colors shadow"
+            title="إضافة 40 تذكرة تجريبية (مزيج من هندسة وتمريض) لاختبار النداء والتصويت"
+          >
+            ⚡ إضافة 40 تذكرة تجريبية
           </button>
 
           <button
