@@ -108,16 +108,33 @@ function speakOnce(text: string): Promise<void> {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return resolve();
 
+    let finished = false;
+    const safeResolve = () => {
+      if (!finished) {
+        finished = true;
+        resolve();
+      }
+    };
+
+    // 12-second safety fallback timer in case browser TTS fails to emit onend/onerror
+    const timeoutId = setTimeout(safeResolve, 12000);
+
     const utterance = new SpeechSynthesisUtterance(text);
     const voice = getSelectedVoice();
     utterance.lang = voice?.lang || "ar-SA";
     if (voice) utterance.voice = voice;
     utterance.rate = 0.92;
     utterance.pitch = 1;
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
+    utterance.onend = () => {
+      clearTimeout(timeoutId);
+      safeResolve();
+    };
+    utterance.onerror = () => {
+      clearTimeout(timeoutId);
+      safeResolve();
+    };
 
-    window.speechSynthesis.cancel(); // don't stack announcements if numbers change quickly
+    // Do NOT call window.speechSynthesis.cancel() here so active announcements are never cut off
     window.speechSynthesis.speak(utterance);
   });
 }
