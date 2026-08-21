@@ -168,9 +168,9 @@ export default function DisplayPage() {
   const [businessDate, setBusinessDate] = useState("");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURIState] = useState("");
-  // Newest `called_at` already shown/announced. null = nothing seen
-  // yet (first load — must not replay history as new announcements).
-  const lastCalledAt = useRef<string | null>(null);
+  // Unique string keys for every call event already handled.
+  // Set<string> | null. null = initial load (must not replay history as new announcements).
+  const handledCallKeys = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     let cleanup = () => {};
@@ -202,28 +202,34 @@ export default function DisplayPage() {
     try {
       const next = await fetchDisplayData(businessDate);
 
-      // Anything called after the newest timestamp we've already
-      // handled is new. There can be more than one (two counters, or a
-      // counter and an admission desk, calling within the same
-      // poll/Realtime tick) — announce all of them, oldest first, so
-      // they play back in the order they actually happened rather than
-      // overlapping or skipping ahead.
-      const newCalls = lastCalledAt.current
-        ? next.recentlyCalled.filter((c) => c.at > lastCalledAt.current!)
-        : [];
-      if (lastCalledAt.current !== null && newCalls.length > 0) {
-        setFlash(true);
-        setTimeout(() => setFlash(false), 1200);
-        [...newCalls]
-          .sort((a, b) => a.at.localeCompare(b.at))
-          .forEach((c) =>
-            c.kind === "counter"
-              ? announceTicket(c.ticketNumber, c.counterNumber)
-              : announceAdmissionTicket(c.ticketNumber, certificateLabel(c.certificateType))
-          );
-      }
-      if (next.recentlyCalled.length > 0) {
-        lastCalledAt.current = next.recentlyCalled[0].at; // [0] is the newest (list is sorted desc)
+      const getCallKey = (c: CalledEntry) =>
+        c.kind === "counter"
+          ? `counter-${c.ticketNumber}-${c.counterNumber}-${c.at}`
+          : `admission-${c.ticketNumber}-${c.certificateType || ""}-${c.at}`;
+
+      if (handledCallKeys.current === null) {
+        // First load: record existing active calls so we don't replay history
+        handledCallKeys.current = new Set(next.recentlyCalled.map(getCallKey));
+      } else {
+        const newCalls = next.recentlyCalled.filter(
+          (c) => !handledCallKeys.current!.has(getCallKey(c))
+        );
+
+        if (newCalls.length > 0) {
+          setFlash(true);
+          setTimeout(() => setFlash(false), 1200);
+
+          [...newCalls]
+            .sort((a, b) => a.at.localeCompare(b.at))
+            .forEach((c) => {
+              handledCallKeys.current!.add(getCallKey(c));
+              if (c.kind === "counter") {
+                announceTicket(c.ticketNumber, c.counterNumber);
+              } else {
+                announceAdmissionTicket(c.ticketNumber, certificateLabel(c.certificateType));
+              }
+            });
+        }
       }
 
       setData(next);
