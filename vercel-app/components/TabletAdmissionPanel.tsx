@@ -72,9 +72,7 @@ export default function TabletAdmissionPanel({
           .select("ticket_number")
           .eq("business_date", businessDate)
           .eq("status", "ADMISSION_NO_SHOW")
-          // In a multi-table setup, if we only want this table's no-shows,
-          // we should ideally filter by admission_desk. But no-shows are globally pooled for admission
-          // so anyone handling this certificate type can recall them.
+          .in("certificate_type", selected)
           .order("updated_at", { ascending: true }),
       ]);
       if (waitingError) throw waitingError;
