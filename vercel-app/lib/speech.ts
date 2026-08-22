@@ -144,7 +144,6 @@ function speakOnce(text: string): Promise<void> {
 async function speak(text: string) {
   await playChime();
   await speakOnce(text);
-  await playChime();
 }
 
 // If two counters call "next" around the same moment, both announcements
