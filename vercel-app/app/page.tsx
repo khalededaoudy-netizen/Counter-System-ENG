@@ -264,9 +264,9 @@ export default function DisplayPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center px-6 py-10 gap-8">
-      <header className="flex flex-col items-center text-center gap-4">
+      <header className="w-full max-w-5xl flex flex-col items-center text-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <div className="flex items-center justify-center gap-6 sm:gap-10">
+        <div className="w-full flex items-center justify-between">
           {/* Left logo: University Student Union */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -296,21 +296,15 @@ export default function DisplayPage() {
           />
         </div>
 
-        <div>
+        <div className="w-full mt-4">
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-wide text-blue-300">
             أهلاً بكم في جامعة الزقازيق الأهلية
           </h1>
           <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-widest mt-2.5">
             اتحـاد طـلاب كليـة الـهـندسـة
           </h2>
-          <div className="flex items-center justify-center gap-4 mt-2">
+          <div className="flex items-center justify-center mt-4">
             <span className="text-slate-500 text-sm">{businessDate}</span>
-            <Link
-              href="/admin"
-              className="text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-blue-300 font-bold px-3 py-1 rounded-xl transition-colors"
-            >
-              📊 لوحة التحكم
-            </Link>
           </div>
         </div>
       </header>
