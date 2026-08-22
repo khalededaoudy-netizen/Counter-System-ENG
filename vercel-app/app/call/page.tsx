@@ -166,7 +166,7 @@ export default function CallPage() {
     } catch (e) {
       setMessage({ kind: "error", text: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني." });
     } finally {
-      setBusy(false);
+      setTimeout(() => setBusy(false), 3000);
     }
   }
 
@@ -205,7 +205,7 @@ export default function CallPage() {
     } catch (e) {
       setMessage({ kind: "error", text: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني." });
     } finally {
-      setBusy(false);
+      setTimeout(() => setBusy(false), 3000);
     }
   }
 
