@@ -161,10 +161,6 @@ async function drainQueue() {
   while (announceQueue.length > 0) {
     const text = announceQueue.shift()!;
     await speak(text);
-    // Pause for 1.5 seconds of silence between consecutive queued announcements
-    if (announceQueue.length > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-    }
   }
   draining = false;
 }

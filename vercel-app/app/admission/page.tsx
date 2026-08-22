@@ -240,7 +240,7 @@ export default function AdmissionPage() {
         message: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني.",
       });
     } finally {
-      setTimeout(() => setBusy(false), 3000);
+      setBusy(false);
     }
   }
 
@@ -286,7 +286,7 @@ export default function AdmissionPage() {
         message: e instanceof Error ? e.message : "خطأ في الشبكة — حاول تاني.",
       });
     } finally {
-      setTimeout(() => setBusy(false), 3000);
+      setBusy(false);
     }
   }
 
