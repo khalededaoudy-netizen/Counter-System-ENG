@@ -211,7 +211,8 @@ export function announceTicket(ticketNumber: number, counterNumber: number) {
  * Goes through the same FIFO queue as the first-stage announcements so
  * the two stages can never talk over each other. */
 export function announceAdmissionTicket(ticketNumber: number, certificateLabel: string) {
-  const destination = certificateLabel && certificateLabel !== "—" ? `شؤون طلاب ${certificateLabel}` : "شؤون الطلاب";
+  const specName = certificateLabel && certificateLabel.startsWith("ال") ? certificateLabel : "ال" + certificateLabel;
+  const destination = certificateLabel && certificateLabel !== "—" ? `شؤون طلاب ${specName}` : "شؤون الطلاب";
   announceQueue.push(
     `الرقم ${arabicNumberWords(ticketNumber)}، يرجى التوجه إلى مكتب ${destination}`
   );
