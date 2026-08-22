@@ -264,7 +264,7 @@ export default function DisplayPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center px-6 py-10 gap-8">
-      <header className="flex flex-col items-center text-center gap-4">
+      <header className="w-full max-w-5xl flex flex-col items-center text-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <div className="flex items-center justify-center gap-6 sm:gap-10">
           {/* Left logo: University Student Union */}
@@ -296,21 +296,23 @@ export default function DisplayPage() {
           />
         </div>
 
-        <div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-wide text-blue-300">
-            أهلاً بكم في جامعة الزقازيق الأهلية
+        <div className="w-full mt-4 px-2 sm:px-4">
+          <h1 className="w-full flex justify-between text-3xl sm:text-5xl font-extrabold text-blue-300">
+            <span>أهلاً</span>
+            <span>بكم</span>
+            <span>في</span>
+            <span>جامعة</span>
+            <span>الزقازيق</span>
+            <span>الأهلية</span>
           </h1>
-          <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-widest mt-2.5">
-            اتحـاد طـلاب كليـة الـهـندسـة
+          <h2 className="w-full flex justify-between text-xl sm:text-3xl font-extrabold text-white mt-4">
+            <span>اتحـاد</span>
+            <span>طـلاب</span>
+            <span>كليـة</span>
+            <span>الـهـندسـة</span>
           </h2>
-          <div className="flex items-center justify-center gap-4 mt-2">
-            <span className="text-slate-500 text-sm">{businessDate}</span>
-            <Link
-              href="/admin"
-              className="text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-blue-300 font-bold px-3 py-1 rounded-xl transition-colors"
-            >
-              📊 لوحة التحكم
-            </Link>
+          <div className="flex items-center justify-center mt-6">
+            <span className="text-slate-500 text-sm font-semibold tracking-wider">{businessDate}</span>
           </div>
         </div>
       </header>
